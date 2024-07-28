@@ -1,0 +1,14 @@
+QuickStart instructions for using SLOctolyzer
+
+1. Install miniconda3 (https://docs.anaconda.com/free/miniconda/miniconda-install/)
+
+2. Open anaconda prompt and execute (line by line)
+    conda create -n slo-analysis python=3.11
+    conda activate slo-analysis
+    pip3 install torch torchvision
+    pip3 install scikit-learn scikit-image opencv-python tqdm seaborn notebook jupyterlab ipywidgets openpyxl segmentation_models_pytorch SimpleITK eyepy
+
+3. Specify image_directory and output_directory in path\to\SLOctolyzer\config.txt
+
+4. In anaconda prompt, navigate to path\to\SLOctolyzer and execute
+    slotolyzer\python main.py
