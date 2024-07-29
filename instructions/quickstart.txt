@@ -11,4 +11,4 @@ QuickStart instructions for using SLOctolyzer
 3. Specify image_directory and output_directory in path\to\SLOctolyzer\config.txt
 
 4. In anaconda prompt, navigate to path\to\SLOctolyzer and execute
-    slotolyzer\python main.py
+    sloctolyzer\python main.py

@@ -51,15 +51,15 @@ To get a local copy up follow the steps in `instructions/quick_start.txt`, or fo
 2. You will need a local installation of python to run SLOctolyzer. We recommend a lightweight package management system such as Miniconda. Follow the instructions [here](https://docs.anaconda.com/free/miniconda/miniconda-install/) to download Miniconda for your desired operating system.
 
 3. After downloading, navigate and open the Anaconda Prompt, and individually copy and run each line found in `install.txt` to create your own environment in Miniconda and download necessary packages.
-    - **Note**: if you have a GPU running locally to use SLOctolyzer, line 2 in `install/install.txt` should be `pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu121`
+    - **Note**: if you have a GPU running locally to use SLOctolyzer, line 3 in `instructions/install.txt` should be `pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu121`
   
-Done! You have successfully set up the software to analyse SLO and OCT image data!
+Done! You have successfully set up the software to analyse SLO image data!
 
 Now you can:
 
 1. Launch notebooks using `jupyter notebook` or jupyter labs using `jupyter lab` and see the minimal example below so that you can analyse your own SLO data.
 
-2. Alternatively, edit the `image_directory` and `output_directory` options in `config.txt` and run `python path\to\SLOctolyzer/sloctolyzer/main.py` to batch process your own dataset ().
+2. Alternatively, edit the `image_directory` and `output_directory` options in `config.txt` and run `python path\to\SLOctolyzer/sloctolyzer/main.py` to batch process your own dataset.
 
 
 If you have any problems using this method, please do not hesitate to contact us - see the end of this README for contact details!
@@ -188,7 +188,7 @@ Once the corrected segmentations are saved out as `.nii.gz` files in the same fo
 
 ### Debugging
 
-If you have any issues with running this software on your own device, please contact us (see end of README for contact email). 
+If you have any issues with running this toolkit on your own device, please contact us (see end of README for contact email). 
 
 This project and software package is an evolving toolkit, so we are expecting unexpected errors to crop up on use-cases which the developers have not foreseen. We hope this pipeline will continue to be adapted to the needs of the end-user, so we welcome any and all feedback!
 
@@ -219,7 +219,7 @@ The contributors to this method and codebase are:
 
 * Jamie Burke (Jamie.Burke@ed.ac.uk)
 
-If you wish to use this methodology please consider citing our work using the following BibText
+If you wish to use this toolkit please consider citing our work using the following BibText
 
 ```
 @article{burke2024sloctolyzer,
