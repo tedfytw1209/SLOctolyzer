@@ -1,5 +1,10 @@
 path\to\SLOctolyzer 
 
-# For example, for Windows native I'd write 
-# C:\Users\s1522100\Documents\PhD Work\Python Scripts\SLOctolyzer
-# Remove these three lines once you corrected the directory path on line 1
+# This file `conda.pth` will allow your Python environment to have access to the files in your local copy of SLOctolyzer.
+# Change the file path above to the absolute file path to SLOctolyzer. For example, for Windows native I'd write 
+# C:\Users\s1522100\Documents\PhD Work\Github\SLOctolyzer
+# Copy this file into the `site-packages` directory of your python environment, commonly found at
+# path\to\miniconda3\envs\oct-analysis\Lib\site-packages
+# This means your conda environment `sloctolyzer` has access to SLOctolyzer's pipeline.
+# Importantly, you can now use `import sloctolyzer` in any notebook or python script which uses this conda environment.
+# Remove these 8 lines once you corrected the directory path on line 1

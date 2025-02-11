@@ -1,4 +1,3 @@
-conda create -n slo-analysis python=3.11
-conda activate slo-analysis
-pip3 install torch torchvision
-pip3 install scikit-learn scikit-image opencv-python tqdm seaborn notebook jupyterlab ipywidgets openpyxl segmentation_models_pytorch SimpleITK eyepy
+conda create -n sloctolyzer python=3.11 -y
+conda activate sloctolyzer
+pip install -r requirements.txt
