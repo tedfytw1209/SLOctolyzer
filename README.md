@@ -3,7 +3,7 @@ Analysis toolkit for automatic segmentation and measurement of retinal vessels f
 
 SLOctolyzer is a fully automatic pipeline which is capable of fully characterising the vessels, fovea and optic disc in SLO images. The pipeline utilises fully automatic deep learning methods for segmenting these landmarks, including detection of arteries and veins.
 
-Please find the pre-print describing SLOctolyzer's entire pipeline [here](https://arxiv.org/abs/2406.16466), which is currently under review at ARVO's Translational Vision Science and Technology.
+Please find the journal article describing SLOctolyzer's entire pipeline [here](https://tvst.arvojournals.org/article.aspx?articleid=2802220), which was previously published in ARVO's Translational Vision Science and Technology.
 
 SLOctolyzer is also capable of extracting clinically-relevant features of interest of the segmented retinal vessels. The code used to measure retinal vessel features is heavily based on the code produced by [Automorph](https://tvst.arvojournals.org/article.aspx?articleid=2783477), whose codebase can be found [here](https://github.com/rmaphoh/AutoMorph).
 
@@ -15,7 +15,33 @@ See below for a visual description of SLOctolyzer's analysis pipeline.
 
 ---
 
-### Project Stucture
+## Table of contents
+
+- [File structure](#file-structure)
+- [Getting started](#getting-started)
+    - [Quick start](#quick-start)
+- [SLOctolyzer's support](#sloctolyzers-support)
+    - [OCT scan patterns](#oct-scan-patterns)
+    - [OS compatibility](#os-compatibility)
+- [SLOctolyzer's pipeline](#sloctolyzers-pipeline)
+    - [Segmentation](#segmentation)
+    - [Feature measurement](#feature-measurement)
+        - [Regions of interest](#regions-of-interest)
+        - [Resolution](#resolution)
+        - [SLO centering](#slo-centering)
+    - [Execution Time](#execution-time)
+- [Fixing segmentation errors](#fixing-segmentation-errors)
+- [Debugging](#debugging)
+    - [Interactive debugging](#interactive-debugging)
+- [Related repositories](#related-repositories)
+- [Contributors and citing](#contributors-and-citing)
+- [Updates](#updates)
+
+  
+
+---
+
+### File Stucture
 
 ```
 .
@@ -23,7 +49,7 @@ See below for a visual description of SLOctolyzer's analysis pipeline.
 ├── figures/		# Figures for README
 ├── instructions/	# Instructions, installation, manual annotation help
 ├── sloctolyzer/	# core module for carrying out segmentation and feature measurement
-├── config.txt		# Text file to specify where the analysis directory is, and whether to robustly analyse a batch, i.e. ignore unexpected errors and bugs.
+├── config.txt		# Text file to specify input/output directories, and whether to robustly analyse a batch, i.e. ignore unexpected errors and bugs.
 ├── README.md		# This file
 └── usage.ipynb		# Demonstrative Jupyter notebook to see usage.
 ```
@@ -42,16 +68,25 @@ See below for a visual description of SLOctolyzer's analysis pipeline.
 
 ---
 
-## Getting Started
+## Getting started
 
 To get a local copy up follow the steps in `instructions/quick_start.txt`, or follow the instructions below.
 
-1. Clone the SLOctolyzer repository via `git clone https://github.com/jaburke166/SLOctolyzer.git`.
+1. You will need a local installation of Python to run SLOctolyzer. We recommend a lightweight package management system such as Miniconda. Follow the instructions [here](https://docs.anaconda.com/free/miniconda/miniconda-install/) to download Miniconda for your desired operating system.
 
-2. You will need a local installation of python to run SLOctolyzer. We recommend a lightweight package management system such as Miniconda. Follow the instructions [here](https://docs.anaconda.com/free/miniconda/miniconda-install/) to download Miniconda for your desired operating system.
+2. After downloading, navigate and open the Anaconda Prompt and clone the OCTolyzer repository.
 
-3. After downloading, navigate and open the Anaconda Prompt, and individually copy and run each line found in `install.txt` to create your own environment in Miniconda and download necessary packages.
-    - **Note**: if you have a GPU running locally to use SLOctolyzer, line 3 in `instructions/install.txt` should be `pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu121`
+```
+git clone https://github.com/jaburke166/SLOctolyzer.git
+```
+
+3. Create environment and install dependencies to create your own environment in Miniconda.
+
+```
+conda create -n oct-analysis python=3.11 -y
+conda activate oct-analysis
+pip install -r requirements.txt
+```
   
 Done! You have successfully set up the software to analyse SLO image data!
 
@@ -64,7 +99,9 @@ Now you can:
 
 If you have any problems using this method, please do not hesitate to contact us - see the end of this README for contact details!
 
-### Minimal example
+### Quick start
+
+Please refer to `usage.ipynb` for an interactive demonstration of analysing SLO data. The first cell is copied below as the minimal example which loads in the demonstrative data found in `analyze/images` and processes any detected image files of `.png` and `.tif` type.
 
 ```
 # load necessary modules
@@ -89,46 +126,30 @@ output = analyse.analyse(path, save_path, scale, location, eye, save_images=1, s
 # the SLO image, all three segmentation masks and a list of strings for the purposes of logging
 ```
 
-Please refer to `usage.ipynb` for an interactive demonstration of analysing an SLO image. There are some example images used for demonstration in `analyze/images`.
-
-Below is a short description of the key elements of the analysis pipeline.
-
 ---
 
-## Current pipeline and support
+## SLOctolyzer's support
 
-At present, SLOctolyzer is vendor neutral and supports most image file formats (with case invariant types `tif/tiff/png/jpeg/jpg/bmp`). If you are working with imaging devices from Heidelberg Engineering, you may have a RAW export license and thus can extract data with the `.vol` file format. SLOctolyzer also supports this file format. `.vol` is helpful for providing essential metadata and image data in one file, permitting measurements to be converted from pixel space to physical space.
-
-See the documents in the `instructions` folder for details on installing and using SLOctolyzer on your device. 
+At present, SLOctolyzer is vendor neutral and supports most image file formats (with case invariant types `tif/tiff/png/jpeg/jpg/bmp`). If you are working with imaging devices from Heidelberg Engineering, you may have a RAW export license and thus can extract data with the `.vol` file format. SLOctolyzer also supports this file format. `.vol` is helpful for providing essential metadata and image data in one file, permitting feature measurements to be converted from pixel space to physical space.
 
 Briefly, SLOctolyzer can be run from the terminal using `main.py` for analysing batches of images, or using `analyse.py` individually per image file using your favourite, interactive IDE such as [VSCode](https://code.visualstudio.com/download) or [Jupyter Notebooks](https://jupyter.org/). In the latter, we expect paths (as strings) to images, rather than the pixel arrays as input.
 
-When using the terminal, you can specify certain input parameters using a configuration file, `config.txt`. Here, you can specify the `image_directory` and `output_directory` where your SLO images can be stored and results saved to, respectively.
+When using the terminal, you can specify certain input parameters using a configuration file, `config.txt`. Here, you can specify the `image_directory` as where your SLO images are stored and `output_directory` as where the results will be saved to.
 
 
 ### OS Compatibility
 
-At present, SLOctolyzer is compatible with Windows and macOS operating systems. Given the compatibility with macOS, it's likely that Linux distributions will also work as expected, although has not been tested explicitly. The installation instructions are also the same across operating systems (once you have installed the relevant Miniconda Python distributions for your own operating system). 
+At present, SLOctolyzer is compatible with Windows and macOS operating systems. Given the compatibility with macOS, it's likely that Linux distributions will also work as expected, although this has not been tested explicitly. The installation instructions are also the same across operating systems (once you have installed the relevant Miniconda Python distributions for your own operating system). 
 
 Once SLOctolyzer is downloaded/cloned and the conda environment/python packages have been installed using the commands in `instructions/install.txt`, it is only the file path structures to be aware of when switching between OS, i.e. in the configuration file, `config.txt`, the `image_directory` and `output_directory` should be compatible with your OS.
 
+---
 
-### Execution time
+## SLOctolyzer's pipeline
 
-SLOctolyzer can run reasonably fast using a standard, GPU-less Windows laptop CPU. Even without GPU accelerations, the segmentation inference of all three models only takes around ~11 seconds. Nevertheless, SLOctolyzer is equipped to detect if there is a GPU available (CUDA only, not MPS for macOS currently) to accelerate segmentation inference.
+### Segmentation
 
-Feature measurement is longer than segmentation inference because:
-- Measurements are made for the binary vessel, artery and vein segmentation maps.
-- For optic disc-centred SLO images, there are three regions of interest considered making it longer to measure than macula-centred images.
-- Image resolution plays a role too, where (768,768) image resolution is quicker than (1536,1536) resolution.
-
-However, based on the example images in `analyze/demo`, a standard laptop Windows CPU takes
-- ~15 seconds for an macula-centred SLO image at (768,768) resolution.
-- ~30 seconds for an optic disc-centred SLO image at (768,768) resolution.
-- ~100 seconds for an optic disc-centred SLO image at (1536,1536) resolution.
-
-The execution time here may vary dependent on the size of the CPU, and whether GPU acceleration is utilised for segmentation inference, so only act as a rough guide.
-
+For segmentation, we use three separate deep learning-based models. One for binary vessel segmentation of the en face retinal vessels, and another for segmentation of the en face retinal vessels into arteries and veins, and simultaneous detection of the optic disc. A final, third model only detects on the fovea on the en face SLO image. Please see the [paper](https://tvst.arvojournals.org/article.aspx?articleid=2802220) which describes these models in more detail, including which datasets and training strategies were used for each model.
 
 ### Feature measurement
 
@@ -174,19 +195,36 @@ In fact, you can ignore the document entirely and SLOctolyzer will still run, an
 
 -SLO images are typically either centred at the fovea or centred at the optic disc. There are standard regions of interest defined to analyse these different types of scans (see above). You can use the excel document `fname_resolution_location_eye.xlsx` found in `analyze` to specify the location of each image (in the `Location` columns). This is not compulsory, as the pipeline does support automatic detection of the location of the SLO scan if the location is not provided by the user. However, it remains to be seen how robust this detection is, users be aware! This goes the same for detecting the eye type (Right or Left).
 
+### Execution time
+
+SLOctolyzer can run reasonably fast using a standard, GPU-less Windows laptop CPU. Even without GPU accelerations, the segmentation inference of all three models only takes around ~11 seconds. Nevertheless, SLOctolyzer is equipped to detect if there is a GPU available (CUDA only, not MPS for macOS currently) to accelerate segmentation inference.
+
+Feature measurement is longer than segmentation inference because:
+- Measurements are made for the binary vessel, artery and vein segmentation maps.
+- For optic disc-centred SLO images, there are three regions of interest considered making it longer to measure than macula-centred images.
+- Image resolution plays a role too, where (768,768) image resolution is quicker than (1536,1536) resolution.
+
+However, based on the example images in `analyze/demo`, a standard laptop Windows CPU takes
+- ~15 seconds for an macula-centred SLO image at (768,768) resolution.
+- ~30 seconds for an optic disc-centred SLO image at (768,768) resolution.
+- ~100 seconds for an optic disc-centred SLO image at (1536,1536) resolution.
+
+The execution time here may vary dependent on the size of the CPU, and whether GPU acceleration is utilised for segmentation inference, so only act as a rough guide.
+
+
 ---
 
-### Fixing segmentation errors
+## Fixing segmentation errors
 
 We do not have any automatic functionality within SLOctolyzer to correct any vessel segmentation errors. Thus, we rely on the user to identify any visible problems with vessel classification.
 
-However, we do provide functionality to correct retinal vessel and optic disc segmentation via ITK-Snap. There are instructions on using ITK-Snap for manual annotations in `instructions/manual_annotations` which describe how to setup ITK-Snap and use it to correct the binary vessel mask, and also the artery-vein-optic disc segmentation masks. 
+However, we do provide functionality to correct retinal vessel and optic disc segmentation via ITK-Snap. There are instructions on using ITK-Snap for manual annotations in `instructions/manual_annotations` which describe how to se tup ITK-Snap and use it to correct the binary vessel mask, and also the artery-vein-optic disc segmentation masks. 
 
 Once the corrected segmentations are saved out as `.nii.gz` files in the same folder with the original `.png` segmentation mask(s), the pipeline can be run again and SLOctolyzer should automatically identify these additional manual annotations and re-compute the features!
 
 ---
 
-### Debugging
+## Debugging
 
 If you have any issues with running this toolkit on your own device, please contact us (see end of README for contact email). 
 
@@ -194,9 +232,15 @@ This project and software package is an evolving toolkit, so we are expecting un
 
 At the moment, setting `robust_run` to 1 will ensure that batch-processing does not fail if an unexpected error is caught. In fact, if an exception is found, details on the error in terms of it's type and full traceback are saved out in the process log (as well as printed out on the terminal/IDE) so the end-user may interrogate the codebase further and understand the source of the error.
 
+### Interactive debugging
+
+In the jupyter notebook `debugger.ipynb`, this contains the code in `sloctolyzer/analyse.py` step-by-step (or, cell-by-cell) which defines SLOctolyzer's analysis pipeline for an SLO input. 
+
+For an SLO file which fails to be analysed, an end-user with minimal experience in Python should be able to try run this notebook and understand at what point of the pipeline the software fails. This is particularly helpful for raising Issues on the Github repository so that a developer can better understand the problem.
+
 ---
 
-### Related repositories
+## Related repositories
 
 If you are interested in OCT (and SLO) image analysis, check this repoistory out:
 
@@ -213,6 +257,7 @@ If you are interested in colour fundus photography (CFP) image analysis, check t
 * [Automorph](https://github.com/rmaphoh/AutoMorph): Automated retinal vascular morphology quantification via a deep learning pipeline.
 
 ---
+
 ## Contributors and Citing
 
 The contributors to this method and codebase are:
@@ -222,10 +267,29 @@ The contributors to this method and codebase are:
 If you wish to use this toolkit please consider citing our work using the following BibText
 
 ```
-@article{burke2024sloctolyzer,
+article{burke2024sloctolyzer,
   title={SLOctolyzer: Fully automatic analysis toolkit for segmentation and feature extracting in scanning laser ophthalmoscopy images},
-  author={Burke, Jamie and Gibbon, Samuel and Engelmann, Justin and Threlfall, Adam and Giarratano, Ylenia and Hamid, Charlene and King, Stuart and MacCormick, Ian JC and MacGillivray, Tom},
-  journal={arXiv preprint arXiv:2406.16466},
-  year={2024}
+  author={Burke, Jamie and Gibbon, Samuel and Engelmann, Justin and Threlfall, Adam and Giarratano, Ylenia and Hamid, Charlene and King, Stuart and MacCormick, Ian JC and MacGillivray, Thomas J},
+  journal={Translational Vision Science \& Technology},
+  volume={13},
+  number={11},
+  pages={7--7},
+  year={2024},
+  publisher={The Association for Research in Vision and Ophthalmology}
 }
   ```
+
+---
+
+## Updates
+
+### 14/02/2025
+
+* Updated `README.md` structure and included a table of contents.
+
+* Added debugging jupyter notebook `debugger.ipynb` for end-users with minimal experience in Python to better understand why an SLO image file might have failed during processing.
+
+### 11/02/2025
+
+* Included a `requirements.txt` file to ensure proper installation of dependencies with SLOctolyzer's pipeline.
+
