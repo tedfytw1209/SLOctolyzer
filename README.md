@@ -73,7 +73,7 @@ To get a local copy up follow the steps in `instructions/quick_start.txt`, or fo
 
 1. You will need a local installation of Python to run SLOctolyzer. We recommend a lightweight package management system such as Miniconda. Follow the instructions [here](https://docs.anaconda.com/free/miniconda/miniconda-install/) to download Miniconda for your desired operating system.
 
-2. After downloading, navigate and open the Anaconda Prompt and clone the OCTolyzer repository.
+2. After downloading, navigate and open the Anaconda Prompt and clone the SLOctolyzer repository.
 
 ```
 git clone https://github.com/jaburke166/SLOctolyzer.git
