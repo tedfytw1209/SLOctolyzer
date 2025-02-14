@@ -21,7 +21,6 @@ See below for a visual description of SLOctolyzer's analysis pipeline.
 - [Getting started](#getting-started)
     - [Quick start](#quick-start)
 - [SLOctolyzer's support](#sloctolyzers-support)
-    - [OCT scan patterns](#oct-scan-patterns)
     - [OS compatibility](#os-compatibility)
 - [SLOctolyzer's pipeline](#sloctolyzers-pipeline)
     - [Segmentation](#segmentation)
@@ -41,7 +40,7 @@ See below for a visual description of SLOctolyzer's analysis pipeline.
 
 ---
 
-### File Stucture
+### File structure
 
 ```
 .
