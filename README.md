@@ -253,8 +253,7 @@ If you are interested in automatic choroid analysis in OCT B-scans specifically,
 
 If you are interested in colour fundus photography (CFP) image analysis, check this repository out:
 
-* [Automorph](https://github.com/rmaphoh/AutoMorph): Automated retinal vascular morphology quantification via a deep learning pipeline.
-
+* [AutoMorphalyzer](https://github.com/jaburke166/AutoMorphalyzer): A fully automatic analysis toolkit for segmentation and feature extracting in CFP data, a restructured version of [AutoMorph](https://github.com/rmaphoh/AutoMorph).
 ---
 
 ## Contributors and Citing
