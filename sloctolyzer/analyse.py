@@ -30,7 +30,9 @@ def analyse(path,
             compute_metrics=True,
             verbose=True,
             segmentation_dict={},
-            demo_return=False):
+            demo_return=False,
+            enface_path=None,
+            ):
     """
     Inner function to analyse an individual IR-SLO img, given options for scaling/location/eye.
 
@@ -68,9 +70,16 @@ def analyse(path,
     if isinstance(path, (str, WindowsPath, PosixPath)):
 
         # check if vol file, otherwise is regular image file
-        ftype = str(path).split('.')[-1]
+        ftype = str(path).rsplit('.', 1)[-1]
         if ftype.lower() == 'vol':
             slo, meta, log = utils.load_volfile(path, verbose=verbose, logging=[])
+            eye = meta['eye']
+            scale = meta['scale']
+            location = meta['location']
+            metadata = copy.deepcopy(meta)
+            logging_list.extend(log)
+        elif ftype.lower() == 'dcm':
+            slo, meta, log = utils.load_dcmfile(path, enface_path=enface_path, verbose=verbose, logging=[])
             eye = meta['eye']
             scale = meta['scale']
             location = meta['location']

@@ -2,10 +2,12 @@ import numpy as np
 import skimage as sk
 import os
 import pandas as pd
+import pydicom
 import pickle
 import matplotlib.pyplot as plt
 import SimpleITK as sitk
 import eyepy
+from datetime import datetime
 
 from PIL import Image, ImageOps
 from skimage import segmentation, measure, exposure
@@ -186,6 +188,215 @@ def load_volfile(vol_path, logging=[], verbose=False):
         
     return slo, metadata, logging
 
+def load_dcmfile(dcm_oct_path, dcm_slo_path, logging=[], verbose=False):
+    """
+    Load and extract pixel and meta data from .dcm file
+
+    Returns OCT B-scan data, all relevant metadata and three
+    versions of the corresponding IR-SLO image: A pain version,
+    one with the fovea-centred B-scan acquisition location superimposed,
+    and another with all B-scan acquisition locations superimposed.
+    """
+    fname_type = os.path.split(dcm_oct_path)[1]
+    pat_id = fname_type.split('.')[0]
+    msg = f"Reading file {fname_type}..."
+    logging.append(msg)
+    if verbose: 
+        print(msg)
+
+    # Catch whether .dcm file is a peripapillary or macular scan. Other locations, i.e. radial "star-shaped" scans
+    # currently not supported.
+    scan_type = "Macula"
+    try: 
+        #voldata = eyepy.import_heyex_vol(vol_path)
+        #(25, 496, 512)
+        voldata = pydicom.dcmread(dcm_oct_path)
+        # pixel data
+        bscan_data = voldata.pixel_array / 255
+        N_scans, M, N = bscan_data.shape
+        fovea_slice_num = N_scans // 2
+        
+    except ValueError as msg:
+        logging.append(msg)
+        raise msg
+
+    # slo data and metadata
+    slo_voldata = pydicom.dcmread(dcm_slo_path)
+    slo = slo_voldata.pixel_array.astype(float) / 255 #TODO:need check
+    slo_N = slo.shape[0]
+    slo_metadict = {
+        "modality": slo_voldata.Modality,
+        "sop_class": str(slo_voldata.SOPClassUID),
+        "num_frames": slo_voldata.NumberOfFrames or 1,
+        "rows": slo_voldata.Rows, "cols": slo_voldata.Columns,
+        "scale_x": slo_voldata.PixelSpacing[0], #row spacing
+        "scale_y": slo_voldata.PixelSpacing[1], #column spacing
+        "laterality": slo_voldata.ImageLaterality,
+        "manufacturer": slo_voldata.get("Manufacturer", None),
+        "field_size": slo_voldata.get("HorizontalFieldOfView", None),
+    }
+    slo_metadict["slo_resolution_px"] = slo_N #e.g. 768
+    slo_metadict["field_of_view_mm"] = slo_metadict["scale_x"] * slo_N #e.g. 768*0.011811=9.07
+    
+    # Extract dates
+    try:
+        visit_date = datetime.strptime(voldata.StudyDate, "%Y%m%d").isoformat()
+    except:
+        visit_date = "Unknown"
+    try:
+        exam_time = datetime.strptime(voldata.StudyDate + voldata.ContentTime.split(".")[0], "%Y%m%d%H%M%S").isoformat()
+    except:
+        exam_time = "Unknown"
+    # bscan metadata
+    pixel_spacing = voldata['SharedFunctionalGroupsSequence'][0]['PixelMeasuresSequence'][0]['PixelSpacing'].value
+    slice_thickness = float(voldata['SharedFunctionalGroupsSequence'][0]['PixelMeasuresSequence'][0]['SliceThickness'].value)
+    vol_metadata = {
+        'Filename': fname_type,
+        "modality": voldata.Modality,
+        "sop_class": str(voldata.SOPClassUID),
+        "sop_instance_uid": str(voldata.SOPInstanceUID),
+        "study_instance_uid": str(voldata.StudyInstanceUID),
+        "series_instance_uid": str(voldata.SeriesInstanceUID),
+        "num_frames": int(voldata.NumberOfFrames) or 1,
+        "rows": voldata.Rows,
+        "cols": voldata.Columns,
+        "scale_y": pixel_spacing[0], # e.g. 0.003872, row spacing
+        "scale_x": pixel_spacing[1], # e.g. 0.011811, column spacing
+        "scale_z": slice_thickness, # e.g. 0.251631
+        "slice_thickness_mm": slice_thickness, # e.g. 0.251631
+        "laterality": voldata.ImageLaterality,
+        "manufacturer": voldata.get("Manufacturer", None),
+        'scale_units': 'microns_per_pixel',
+        'retinal_layers_N': 2,   # placeholder
+        'scan_focus': -1.77,     # placeholder
+        'visit_date': visit_date,
+        'exam_time': exam_time
+    }
+    eye = vol_metadata["laterality"]
+    if eye == 'OD':
+        eye = 'Right'
+    elif eye == 'OS':
+        eye = 'Left'
+    else:
+        eye = 'Unknown'
+    scale_z, scale_x, scale_y = vol_metadata["scale_z"], vol_metadata["scale_x"], vol_metadata["scale_y"]
+    bscan_meta = voldata['PerFrameFunctionalGroupsSequence']
+    
+    # Detect type of scan
+    if scan_type == "Optic disc":
+        type = scan_type
+        msg = f"Loaded a peripapillary (circular) B-scan and Optic disc IR-SLO."
+    elif scan_type == "Macula" and scale_z != 0:
+        type = "Ppole"
+        msg = f"Loaded a posterior pole scan with {N_scans} B-scans and Macular IR-SLO."
+    else:
+        stp = bscan_meta[0]["start_pos"][0]
+        enp = bscan_meta[0]["end_pos"][1]
+        if np.allclose(stp,0,atol=1e-3):
+            type = "H-line"
+        elif np.allclose(enp,0,atol=1e-3):
+            type = "V-line"
+        else:
+            type = "AV-line"
+        msg = f"Loaded a single {type} B-scan."
+    logging.append(msg)
+    if verbose:
+        print(msg)
+
+    # Construct slo-acquisition image and extract quality of B-scan    
+    msg = "Accessing IR-SLO and organising metadata..."
+    logging.append(msg)
+    if verbose:
+        print(msg)
+    all_mm_points = []
+    all_quality = [0,0,0]
+    for m in bscan_meta:
+        img_position = m["PlanePositionSequence"][0]["ImagePositionPatient"].value
+        st = (img_position[0], img_position[2])
+        en = (img_position[0] + scale_x*N, img_position[2])
+        point = np.array([st, en])
+        all_mm_points.append(point)
+
+    # Only relevant for Ppole data
+    quality_mu = np.mean(all_quality)
+    quality_sig = np.std(all_quality)
+    
+    # Convert start and end B-scan locations from mm to pixel
+    all_px_points = []
+    for point in all_mm_points:
+        all_px_points.append(slo_N * point / slo_metadict["field_of_view_mm"])
+    all_px_points = np.array(all_px_points)
+    
+    # Draw the acquisition locations onto the SLO
+    slo_at_fovea = np.concatenate(3*[slo[...,np.newaxis]], axis=-1)
+    slo_acq = slo_at_fovea.copy()
+
+    # For peripapillary scans, we draw a circular ROI
+    if scan_type == "Optic disc":
+        peripapillary_coords = all_px_points[0].astype(int)
+        
+        if eye == "Right":
+            OD_center, OD_edge = peripapillary_coords[peripapillary_coords[:,0].argsort()]
+        elif eye == "Left":
+            OD_edge, OD_center = peripapillary_coords[peripapillary_coords[:,0].argsort()]
+
+        circular_radius = np.abs(OD_center[0] - OD_edge[0])
+        circular_mask,_ = slo_measurement._create_circular_mask(img_shape=(slo_N,slo_N), 
+                                                             center=OD_center, 
+                                                             radius=circular_radius)
+        circular_bnd_mask = segmentation.find_boundaries(circular_mask)
+        slo_acq[circular_bnd_mask,:] = 0
+        slo_acq[circular_bnd_mask,1] = 1
+        slo_at_fovea = slo_acq.copy()
+        #slo_metadict["stxy_coord"] = f"{OD_edge[0]},{OD_edge[1]}"
+        slo_metadict["od_radius_px"] = circular_radius
+        slo_metadict["od_center_x"] = OD_center[0]
+        slo_metadict["od_center_y"] = OD_center[1]
+        #slo_metadict["roi_radius_mm"] = np.round(circular_radius*slo_metadict["scale_x"],2)
+    else:
+        # For macular scans, we generate line for each B-scan location and 
+        # superimpose acquisition line onto copied SLO. Create one with all
+        #  acquisition lines, and one with only
+        # the fovea. slo_at_fov only used when N_scans > 1
+        for idx, point in enumerate(all_px_points):
+            x_idx, y_idx = [[1,0], [0,1]][type != "V-line"]
+            X, y = point[:,x_idx].reshape(-1,1), point[:,y_idx]
+            linmod = LinearRegression().fit(X, y)
+            x_grid = np.linspace(X[0,0], X[1,0], 800).astype(int)
+            x_grid = x_grid[(x_grid < slo_N) & (x_grid >= 0)]
+            y_grid = linmod.predict(x_grid.reshape(-1,1)).astype(int)
+            x_grid = x_grid[y_grid < slo_N]
+            y_grid = y_grid[y_grid < slo_N]
+            for (x,y) in zip(x_grid, y_grid):
+                x_idx, y_idx = [[y,x], [x,y]][type != "V-line"]
+                slo_acq[y_idx, x_idx, :] = 0
+                slo_acq[y_idx, x_idx, 1] = 1
+                if (idx+1) == fovea_slice_num:
+                    slo_at_fovea[y_idx, x_idx, :] = 0
+                    slo_at_fovea[y_idx, x_idx, 1] = 1
+    # Create DataFrame of metadata
+    bscan_metadict = {}
+    bscan_metadict["Filename"] = fname_type
+    bscan_metadict["eye"] = eye
+    bscan_metadict["scale_units"] = "microns_per_pixel"
+    bscan_metadict["avg_quality"] = quality_mu
+
+    # Remove duplicates: store scales as microns-per-pixel, laterality=eye
+    slo_metadict["scale"] = 1e3*slo_metadict["scale_x"]
+    for key in ["laterality", "scale_x", "scale_y", "scale_unit"]:
+        del slo_metadict[key]
+    slo_metadict["location"] = scan_type
+    slo_metadict["field_size_degrees"] = slo_metadict.pop("field_size")
+    #slo_metadict["slo_modality"] = slo_metadict.pop("modality")
+        
+    # Combine metadata and return with data
+    metadata = {**bscan_metadict, **slo_metadict}
+    msg = "Done!"
+    logging.append(msg)
+    if verbose:
+        print(msg)
+        
+    return slo, metadata, logging
 
 def load_img(path, ycutoff=0, xcutoff=0, pad=False, pad_factor=32,
              dtype=np.uint8, normalise=False, grayscale=True):
