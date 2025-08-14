@@ -222,7 +222,7 @@ def load_dcmfile(dcm_oct_path, dcm_slo_path, logging=[], verbose=False):
 
     # slo data and metadata
     slo_voldata = pydicom.dcmread(dcm_slo_path)
-    slo = slo_voldata.pixel_array.astype(float) / 255 #TODO:need check
+    slo = slo_voldata.pixel_array.astype(float)
     slo_N = slo.shape[0]
     slo_metadict = {
         "modality": slo_voldata.Modality,
@@ -273,9 +273,9 @@ def load_dcmfile(dcm_oct_path, dcm_slo_path, logging=[], verbose=False):
         'exam_time': exam_time
     }
     eye = vol_metadata["laterality"]
-    if eye == 'OD':
+    if eye == 'R':
         eye = 'Right'
-    elif eye == 'OS':
+    elif eye == 'L':
         eye = 'Left'
     else:
         eye = 'Unknown'
@@ -387,6 +387,9 @@ def load_dcmfile(dcm_oct_path, dcm_slo_path, logging=[], verbose=False):
         del slo_metadict[key]
     slo_metadict["location"] = scan_type
     slo_metadict["field_size_degrees"] = slo_metadict.pop("field_size")
+    slo_metadict['visit_date'] = visit_date
+    slo_metadict['exam_time'] = exam_time
+    slo_metadict['pixel_resolution'] = slo_N
     #slo_metadict["slo_modality"] = slo_metadict.pop("modality")
         
     # Combine metadata and return with data
