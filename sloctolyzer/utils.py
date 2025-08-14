@@ -383,7 +383,7 @@ def load_dcmfile(dcm_oct_path, dcm_slo_path, logging=[], verbose=False):
 
     # Remove duplicates: store scales as microns-per-pixel, laterality=eye
     slo_metadict["scale"] = 1e3*slo_metadict["scale_x"]
-    for key in ["laterality", "scale_x", "scale_y", "scale_unit"]:
+    for key in ["laterality", "scale_x", "scale_y"]:
         del slo_metadict[key]
     slo_metadict["location"] = scan_type
     slo_metadict["field_size_degrees"] = slo_metadict.pop("field_size")
