@@ -15,5 +15,6 @@ module load conda
 conda activate oct-analysis
 
 DATA_CSV=$1
+OUTPUT_CSV=$2
 
-python3 usage_slo.py --analysis_csv $DATA_CSV
+python3 usage_slo.py --analysis_csv $DATA_CSV --output_directory $OUTPUT_CSV
