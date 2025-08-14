@@ -79,7 +79,7 @@ def analyse(path,
             metadata = copy.deepcopy(meta)
             logging_list.extend(log)
         elif ftype.lower() == 'dcm':
-            slo, meta, log = utils.load_dcmfile(path, enface_path=enface_path, verbose=verbose, logging=[])
+            slo, meta, log = utils.load_dcmfile(path, enface_path, verbose=verbose, logging=[])
             eye = meta['eye']
             scale = meta['scale']
             location = meta['location']
