@@ -16,5 +16,6 @@ conda activate oct-analysis
 
 DATA_CSV=$1
 OUTPUT_CSV=$2
+Robust=$3
 
-python3 usage_slo.py --analysis_csv $DATA_CSV --output_directory $OUTPUT_CSV
+python3 usage_slo.py --analysis_csv $DATA_CSV --output_directory $OUTPUT_CSV --robust_run $Robust
