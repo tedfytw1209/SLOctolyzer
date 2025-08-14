@@ -270,8 +270,8 @@ def run(args):
     all_logging_list = []
     all_df = pd.DataFrame()
     for fname_type, output in result_dict.items():
-        
-        fname = fname_type.split(".")[0]
+
+        fname = fname_type.rsplit(".", 1)[0]
         fname_path = os.path.join(save_directory, fname)
         all_logging_list.append(f"\n\nANALYSIS LOG OF {fname_type}")
 

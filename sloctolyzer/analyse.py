@@ -136,7 +136,7 @@ def analyse(path,
     fname_type = split_path[-1]
         
     # Get filename and log to user SLO is being analysed
-    fname = fname_type.split(".")[0]
+    fname = fname_type.rsplit(".", 1)[0]
     metadata['Filename'] = fname_type
     msg = f"\nAnalysing {fname}."
     logging_list.append(msg)
