@@ -86,6 +86,8 @@ def run(args):
             fname_type = str(oct_path).split('/')[-1]
         elif isinstance(oct_path, WindowsPath):
             fname_type = str(oct_path).split("\\")[-1]
+        else:
+            fname_type = str(oct_path).split("/")[-1]
         ftype = fname_type.rsplit('.',1)[1]
         fname = fname_type.rsplit(".",1)[0]
         fname_path = os.path.join(save_directory, fname)
