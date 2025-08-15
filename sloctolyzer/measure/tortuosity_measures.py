@@ -107,10 +107,22 @@ def width_measurement(x, y, retinal):
         width_matrix = 1
         width_mask = np.zeros((vessel_map.shape))
         width_cal = 0
+        H, W = vessel_map.shape[:2]
+        max_radius = max(H, W)
+        prev_nonzero = 0
+        saturated = False
     
         while width_matrix:
             width+=1
+            if width > max_radius:
+                saturated = True
+                break
             cv2.circle(width_mask,(y[i],x[i]),radius=width,color=(255,255,255),thickness=-1)
+            cur_nonzero = int((width_mask > 0).sum())
+            if cur_nonzero == prev_nonzero:
+                saturated = True
+                break
+            prev_nonzero = cur_nonzero
             masked_vessel = vessel_map[width_mask>0]
             width_matrix = np.all(masked_vessel>0)
         

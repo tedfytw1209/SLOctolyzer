@@ -216,11 +216,23 @@ def width_measurement(x, y, retinal, fast_width=True, fast_pad=20, ret_maps=Fals
         width_matrix = 1
         width_mask = np.ascontiguousarray(np.zeros_like(vessel_map), dtype=np.uint8)
         width_cal = 0
+        H, W = vessel_map.shape[:2]
+        max_radius = max(H, W)
+        prev_nonzero = 0
+        saturated = False
         
         while width_matrix:
             width+=1
+            if width > max_radius:
+                saturated = True
+                break
             #print("CIRCLE")
             cv2.circle(width_mask,(y[i],x[i]),radius=width,color=(255,255,255),thickness=-1)
+            cur_nonzero = int((width_mask > 0).sum())
+            if cur_nonzero == prev_nonzero:
+                saturated = True
+                break
+            prev_nonzero = cur_nonzero
             #print("TEST1")
             masked_vessel = vessel_map[width_mask>0]
             #print("TEST2\n")
