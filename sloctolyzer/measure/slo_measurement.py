@@ -286,8 +286,6 @@ def _create_circular_mask(scalex=11.48, center=None, img_shape=(768,768), grid_s
     
     return mask, logging
 
-
-
 def _create_square_mask(scalex=11.48, center=None, img_shape=(768,768), grid_size=7000, width=None, logging=[], verbose=True):
     '''
     Create a squares-shaped binary mask
@@ -320,7 +318,37 @@ def _create_square_mask(scalex=11.48, center=None, img_shape=(768,768), grid_siz
 
     return mask, logging
     
+def _ensure_bool(arr):
+    # 將 0/1、0/255、float 轉成布林
+    if arr.dtype == bool:
+        return arr
+    mx = arr.max() if arr.size else 0
+    return (arr > 0) if mx <= 1 else (arr.astype(np.float32) > 0)
 
+def _create_circular_mask_bool(img_shape, center=None, radius=None):
+    H, W = img_shape[:2]
+    if center is None:
+        center = (W//2, H//2)
+    Y, X = np.ogrid[:H, :W]
+    dist = (X - center[0])**2 + (Y - center[1])**2
+    return dist <= radius**2
+
+def _build_windows_robust(retina_obj, window_size, min_pixels, WindowCls, log=None):
+    if log is None: log = []
+    try:
+        return WindowCls(retina_obj, window_size, min_pixels=min_pixels)
+    except ValueError:
+        log.append(f"[SLO] No windows with window_size={window_size}, min_pixels={min_pixels}")
+    for ws in [window_size, max(32, window_size//2), max(16, window_size//4)]:
+        for mp in [min_pixels, max(1, min_pixels//2), 1]:
+            try:
+                win = WindowCls(retina_obj, ws, min_pixels=mp)
+                log.append(f"[SLO] Relaxed to window_size={ws}, min_pixels={mp}")
+                return win
+            except ValueError:
+                continue
+    log.append("[SLO] Fallback to full-image window")
+    return WindowCls(retina_obj, max(16, window_size), min_pixels=1)
 
 def vessel_metrics(window: Window, 
                    window_size: tuple[int, int] = (768,768),
