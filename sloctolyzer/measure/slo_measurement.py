@@ -662,7 +662,8 @@ def measure_sloroi(binmap, fovea, od_centre, od_radius,
     # Instantiate retina class for ROI and create window(s). We also skeletonise the map so that 
     # window.np_image is the skeleton version but window.vessel_image is the original binary map
     roi_Retina = Retina(roi, ".", store_path=vessel_type, scalex=scalex)
-    roi_Window = Window(roi_Retina, WINDOW_SIZE, min_pixels=MIN_WINDOW_PIXEL)
+    #roi_Window = Window(roi_Retina, WINDOW_SIZE, min_pixels=MIN_WINDOW_PIXEL)
+    roi_Window = _build_windows_robust(roi_Retina, WINDOW_SIZE, MIN_WINDOW_PIXEL, WindowCls=Window, log=logging)
     roi_Window.skeletonization()
 
     # Measure vessel metrics on window(s) and extract with informative variable names
