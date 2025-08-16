@@ -273,6 +273,7 @@ def run(args):
 
         fname = fname_type.rsplit(".", 1)[0]
         fname_path = os.path.join(save_directory, fname)
+        os.makedirs(fname_path, exist_ok=True)
         all_logging_list.append(f"\n\nANALYSIS LOG OF {fname_type}")
 
         # Create default dataframe for failed individuals
