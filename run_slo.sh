@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=10           # Number of cores per MPI task 
 #SBATCH --nodes=1                    # Maximum number of nodes to be allocated
 #SBATCH --mem=20g
-#SBATCH --time=48:00:00
+#SBATCH --time=72:00:00
 #SBATCH --output=%x.%j.out
 
 pwd; hostname; date
