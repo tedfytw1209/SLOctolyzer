@@ -3,9 +3,9 @@
 #SBATCH --mail-type=NONE
 #SBATCH --mail-user=NONE
 #SBATCH --ntasks=1                 # Number of MPI tasks (i.e. processes)
-#SBATCH --cpus-per-task=10           # Number of cores per MPI task 
+#SBATCH --cpus-per-task=32           # Number of cores per MPI task 
 #SBATCH --nodes=1                    # Maximum number of nodes to be allocated
-#SBATCH --mem=20g
+#SBATCH --mem=64g
 #SBATCH --time=72:00:00
 #SBATCH --output=%x.%j.out
 
